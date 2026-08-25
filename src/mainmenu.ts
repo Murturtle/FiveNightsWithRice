@@ -12,15 +12,24 @@ var audioBg: HTMLAudioElement | null = null;
 const splashes = ["Night 4 is out!", "RIIIIICEEEEEE!!!", "Sherwood loves his diet coke", '"What is the sine of pi/6?" - Neeway', "Night 5 lowkey coming soon..."];
 const rndSplash = Math.floor(Math.random() * splashes.length);
 
-interface uData{
+export interface uData{
   revision: number;
   version: string;
   note: string;
 }
 
-var firstOpen = false;
 
+
+
+var firstOpen = false;
 var updateData: uData | null = null;
+var revision = 1;
+
+
+export function setUpdateData(data: uData) {
+    updateData = data;
+}
+
 
 function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, updateSixty: boolean, mouseX: number, mouseY: number, mouseClicked: boolean, mouseFirstMove: boolean) {
     ctx.fillStyle = "rgb(80, 0, 129)";
@@ -32,30 +41,7 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
         audioBg.volume = 0.33
     }
 
-    if(!firstOpen) {
-        firstOpen = true;
-            fetch('https://example.com').then(function(response){
-                if (!response.ok) {
-                    updateData = {
-                        "revision": 0,
-                        "version": "0.0.0",
-                        "note": "Failed to fetch update"
-                    }
-                }
-
-                response.json().then(function(data: uData) {
-                    updateData = data;
-                });
-
-                
-            }).catch(function(){
-                updateData = {
-                    "revision": 0,
-                    "version": "0.0.0",
-                    "note": "Failed to fetch update"
-                }
-            })
-    }
+    
 
 
 
@@ -217,14 +203,13 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
 
 
     ctx.save();
-
     ctx.fillStyle = "yellow";
     ctx.font = String(32 + Math.sin(TimeManager.getTime() / 100) * 1) + "px Monospace";
     const infoText = splashes[rndSplash];
     const infoX = textX + titleWidth;
     const infoY = textY + 24;
     ctx.translate(infoX, infoY);
-    ctx.rotate(-Math.PI / 12);
+    ctx.rotate(-Math.PI / 24);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(infoText, 0, 0);
@@ -306,17 +291,26 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
     ctx.fillText(resetText, resetX, resetY);
 
 
-    var credText = "Version 1.4.0 - Created by class of 2028 - "
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px monospace";
+    var updateText = ""
     
     if(updateData == null) {
-        credText += "Checking for updates..."
+        updateText = "Checking for updates..."
     } else if(updateData.version == "0.0.0") {
-        credText += `${updateData.note}`;
+        updateText =`${updateData.note}`;
     } else {
-        credText = `Current: 1.4.0 - New Update Ready: ${updateData.version} - ${updateData.note}`;
+        if(revision < updateData.revision) {
+            updateText = `New Update Ready: ${updateData.version} - ${updateData.note}`;
+        }
     }
+    ctx.fillText(updateText, 16, canvas.height - 32 - 28);
+
+
+
+    const credText = "Version 1.4.0 - Created by class of 2028"
     ctx.font = "24px monospace";
-    ctx.fillStyle = "white";
     ctx.fillText(credText, 16, canvas.height - 32);
 
 

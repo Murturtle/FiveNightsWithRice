@@ -29,8 +29,6 @@ module.exports = {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
         clean: true,
-
-        // Don't generate unnecessary module information
         pathinfo: false,
     },
 
@@ -44,8 +42,6 @@ module.exports = {
                 terserOptions: {
                     compress: {
                         passes: 3,
-                        drop_console: true,
-                        drop_debugger: true,
                         booleans_as_integers: true,
                         comparisons: true,
                         conditionals: true,

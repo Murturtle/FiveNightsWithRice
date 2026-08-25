@@ -36,6 +36,7 @@ import { AssetStore } from "./assetStore";
 import { playSound } from "./soundHelper";
 import { TimeManager } from "./offTabFrameFix";
 import { renderLaunch } from "./renderLaunch";
+import { setUpdateData, uData } from "./mainmenu";
 
 const canvas = document.getElementById("gamecanvas") as HTMLCanvasElement;
 canvas.width = window.innerWidth;
@@ -125,6 +126,29 @@ if(bestNightLS != null) {
 } else {
     localStorage.setItem("bestNight", "1");
 }
+
+fetch('https://raw.githubusercontent.com/Murturtle/FiveNightsWithRice/refs/heads/main/update.json',{cache: 'no-store'}).then(function(response){
+    if (!response.ok) {
+        setUpdateData( {
+            "revision": 0,
+            "version": "0.0.0",
+            "note": "Failed to fetch update"
+        } )
+    }
+
+    response.json().then(function(data: uData) {
+        console.log(data);
+        setUpdateData(data);
+    });
+
+    
+}).catch(function(){
+    setUpdateData({
+        "revision": 0,
+        "version": "0.0.0",
+        "note": "Failed to fetch update"
+    })
+})
 
 
 
