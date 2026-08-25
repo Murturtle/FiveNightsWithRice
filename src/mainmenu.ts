@@ -3,11 +3,24 @@ import { State, StateManager } from "./gameState";
 import { renderFade, renderStaticPassive, startFade, renderSixTransition, renderLight, renderStatic } from "./renderHelper";
 import { playSound, stopAllSounds } from "./soundHelper";
 import { TimeManager } from "./offTabFrameFix";
+import { notes } from "./patchNotes";
 
-var lastHoverState = { start: false, resume: false, reset: false };
+var lastHoverState = { start: false, resume: false, reset: false, tut: false, github: false };
 
 var audioBg: HTMLAudioElement | null = null;
 
+const splashes = ["Night 4 is out!", "RIIIIICEEEEEE!!!", "Sherwood loves his diet coke", '"What is the sine of pi/6?" - Neeway', "Night 5 lowkey coming soon..."];
+const rndSplash = Math.floor(Math.random() * splashes.length);
+
+interface uData{
+  revision: number;
+  version: string;
+  note: string;
+}
+
+var firstOpen = false;
+
+var updateData: uData | null = null;
 
 function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, updateSixty: boolean, mouseX: number, mouseY: number, mouseClicked: boolean, mouseFirstMove: boolean) {
     ctx.fillStyle = "rgb(80, 0, 129)";
@@ -17,6 +30,31 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
         audioBg = playSound("title");
         audioBg.loop = true;
         audioBg.volume = 0.33
+    }
+
+    if(!firstOpen) {
+        firstOpen = true;
+            fetch('https://example.com').then(function(response){
+                if (!response.ok) {
+                    updateData = {
+                        "revision": 0,
+                        "version": "0.0.0",
+                        "note": "Failed to fetch update"
+                    }
+                }
+
+                response.json().then(function(data: uData) {
+                    updateData = data;
+                });
+
+                
+            }).catch(function(){
+                updateData = {
+                    "revision": 0,
+                    "version": "0.0.0",
+                    "note": "Failed to fetch update"
+                }
+            })
     }
 
 
@@ -182,28 +220,61 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
 
     ctx.fillStyle = "yellow";
     ctx.font = String(32 + Math.sin(TimeManager.getTime() / 100) * 1) + "px Monospace";
-    const infoText = "Night 4 is out!";
-    const infoX = titleWidth + getRotatedTextWidth(ctx, infoText, -Math.PI / 12) / 2;
+    const infoText = splashes[rndSplash];
+    const infoX = textX + titleWidth;
     const infoY = textY + 24;
-
     ctx.translate(infoX, infoY);
-
     ctx.rotate(-Math.PI / 12);
-
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(infoText, 0, 0);
-
     ctx.restore();
 
 
+    // Open tutorial
+    ctx.font = "32px Monospace";
+    const tutText = "Tutorial & Patch Notes";
+    const tutWidth = ctx.measureText(tutText).width;
+    const tutX = textX + 5;
+    const tutY = textY + 290;
+    const tutHeight = 32;
+
+    ctx.textAlign = "left";
+
+    if (
+        mouseX > tutX &&
+        mouseX < tutX + tutWidth &&
+        mouseY > tutY - tutHeight &&
+        mouseY < tutY
+    ) {
+        if (lastHoverState.tut === false) {
+            playSound("hover");
+        }
+
+        ctx.fillStyle = "yellow";
+        lastHoverState.tut = true;
+
+        if (mouseClicked) {
+            playSound("click");
+
+            var wind = window.open("","","width=800,height=600");
+            if(wind != null){
+                wind.document.body.innerHTML = notes;
+            }
+            
+        }
+    } else {
+        ctx.fillStyle = "white";
+        lastHoverState.tut = false;
+    }
+    ctx.fillText(tutText, tutX, tutY);
+
     // Reset game
-    ctx.textAlign = "center";
     ctx.font = "32px Monospace";
     const resetText = "Reset Save";
     const resetWidth = ctx.measureText(resetText).width;
     const resetX = textX + 5;
-    const resetY = textY + 320;
+    const resetY = textY + 330;
 
     const resetHeight = 32;
 
@@ -232,16 +303,55 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
         ctx.fillStyle = "white";
         lastHoverState.reset = false;
     }
-
     ctx.fillText(resetText, resetX, resetY);
 
 
+    var credText = "Version 1.4.0 - Created by class of 2028 - "
     
-
-
+    if(updateData == null) {
+        credText += "Checking for updates..."
+    } else if(updateData.version == "0.0.0") {
+        credText += `${updateData.note}`;
+    } else {
+        credText = `Current: 1.4.0 - New Update Ready: ${updateData.version} - ${updateData.note}`;
+    }
     ctx.font = "24px monospace";
     ctx.fillStyle = "white";
-    ctx.fillText("Version 1.4.0 - Created by class of 2028", 16, canvas.height - 32);
+    ctx.fillText(credText, 16, canvas.height - 32);
+
+
+    ctx.textAlign = "left";
+    ctx.font = "24px Monospace";
+    const githubText = "Github";
+    var githubWidth = ctx.measureText(githubText).width;
+    const githubX = canvas.width - githubWidth - 32;
+    const githubHeight = 24;
+    const githubY = canvas.height - 32;
+
+    if (
+        mouseX > githubX &&
+        mouseX < githubX + githubWidth &&
+        mouseY > githubY - githubHeight &&
+        mouseY < githubY
+    ) {
+        if (lastHoverState.github === false) {
+            playSound("hover");
+        }
+        ctx.fillStyle = "yellow";
+        lastHoverState.github = true;
+
+        if (mouseClicked) {
+            playSound("click");
+
+            window.open("https://github.com/Murturtle/FiveNightsWithRice");
+        }
+    } else {
+        ctx.fillStyle = "white";
+        lastHoverState.github = false;
+    }
+
+    ctx.fillText(githubText, githubX, githubY);
+
 
     renderSixTransition(canvas, ctx);
     renderStatic(canvas,ctx,updateSixty);
@@ -251,13 +361,4 @@ function drawMainMenu(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, 
     /*if(mouseFirstMove){
         renderLight(canvas,ctx,mouseX,mouseY,updateSixty);
     }*/
-}
-
-function getRotatedTextWidth(ctx: CanvasRenderingContext2D, text: string, angle: number): number {
-    const metrics = ctx.measureText(text);
-    const textWidth = metrics.width;
-    const fontHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent || parseInt(ctx.font);
-
-    const rotatedWidth = Math.abs(textWidth * Math.cos(angle)) + Math.abs(fontHeight * Math.sin(angle));
-    return rotatedWidth;
 }

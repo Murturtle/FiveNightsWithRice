@@ -1,5 +1,5 @@
 # FiveNightsWithRice
-Five Nights With Rice is a FNAF inspired game taking place in Sunset High School. The game is mostly written in typescript and uses a few helper scripts written in python to compile and compress assets.
+Five Nights With Rice is a FNAF and (FNAW)[https://g.lax1dude.net/fnaw] inspired game taking place in Sunset High School. The game is mostly written in typescript and uses a few helper scripts written in python to compile and compress assets.
 
 ## How to compile
 `python3 removeFileData.py ./src/assets/ ./src/compAssets/`
