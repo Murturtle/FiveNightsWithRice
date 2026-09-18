@@ -70,7 +70,7 @@ function renderInGame(
 
 
 
-    if (audioBg == null) {
+    if (audioBg == null || audioBg.paused) {
         audioBg = playSound("buzz");
         audioBg.loop = true;
     }
@@ -256,7 +256,7 @@ function renderInGame(
                     } else {
                         StateManager.setQuiz(false);
                         StateManager.getCharacters()[3].lastMoveTime = TimeManager.getTime();
-                        setTimeout(function(){StateManager.loseNight()},2500);
+                        StateManager.catchPlayer(3);
                     }
                 }
             }

@@ -13,6 +13,7 @@ module.exports = {
 
     module: {
         rules: [
+            { test: /\.png$/, type: 'asset/inline' },
             {
                 test: /\.tsx?$/,
                 use: 'ts-loader',

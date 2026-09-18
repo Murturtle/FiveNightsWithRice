@@ -37,6 +37,7 @@ import { playSound } from "./soundHelper";
 import { TimeManager } from "./offTabFrameFix";
 import { renderLaunch } from "./renderLaunch";
 import { setUpdateData, uData } from "./mainmenu";
+import { renderCaughtEffect, unlockCaughtAudio, pauseCaughtAudio, resumeCaughtAudio } from "./caughtEffect";
 
 const canvas = document.getElementById("gamecanvas") as HTMLCanvasElement;
 canvas.width = window.innerWidth;
@@ -162,8 +163,10 @@ function updateFrame() {
     lastTime = now;
 
     if (StateManager.current() == State.Playing) {
-        const prevBat = StateManager.getBatteryLevel();
         StateManager.tickCharacters();
+    }
+    if (StateManager.current() == State.Playing) {
+        const prevBat = StateManager.getBatteryLevel();
         if (StateManager.getTimeHours() == 6) {
             StateManager.winNight();
         }
@@ -197,6 +200,7 @@ function updateFrame() {
 
         if (StateManager.getTimeHours() > 6 && StateManager.getTimeHours() != 12) {
             bigRice.setLocation(0);
+            StateManager.catchPlayer(0);
         }
 
     }
@@ -229,6 +233,14 @@ function updateFrame() {
 
     if (StateManager.current() == State.Playing) {
         renderInGame(canvas, ctx, updateSixty, mouseX, mouseY, mouseClicked);
+    }
+
+    if (StateManager.current() == State.Caught) {
+        secondAccumulator = 0;
+        mouseClicked = false;
+        if (renderCaughtEffect(canvas, ctx)) StateManager.loseNight();
+        requestAnimationFrame(updateFrame);
+        return;
     }
 
     
@@ -313,6 +325,7 @@ document.addEventListener("mousemove", (event) => {
 });
 
 document.addEventListener("mousedown", (event) => {
+    unlockCaughtAudio();
     console.log(`clicked: (${event.clientX}, ${event.clientY})`);
     mouseClicked = true;
     if(!mouseFirstClick) {
@@ -322,10 +335,12 @@ document.addEventListener("mousedown", (event) => {
 
 window.addEventListener("blur", () => {
     TimeManager.switchedOffTab();
+    pauseCaughtAudio();
 })
 
 window.addEventListener("focus", () => {
     TimeManager.switchedToTab();
+    resumeCaughtAudio();
 })
 
 window.addEventListener("resize", () => {
@@ -349,4 +364,3 @@ startStatic(0);
 clearStatic();
 document.body.style.cursor = "none";
 requestAnimationFrame(updateFrame);
-
