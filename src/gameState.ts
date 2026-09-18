@@ -3,11 +3,13 @@ import { CharacterModel } from "./characterModel";
 import { startFade, startSixTransition, startStatic } from "./renderHelper";
 import { playSound, stopAllSounds } from "./soundHelper";
 import { TimeManager } from "./offTabFrameFix";
+import { beginCaughtEffect, stopCaughtEffect } from "./caughtEffect";
 
 enum State {
     MainMenu,
     Playing,
-    Launching
+    Launching,
+    Caught
 };
 
 var camConnected = [
@@ -28,8 +30,10 @@ export class StateManager {
     private static characters: CharacterModel[] = []
 
     public static debug = false;
+    private static nightCall: ReturnType<typeof setTimeout> | undefined;
 
     static startGame(night: number) {
+        clearTimeout(this.nightCall);
         this.setNight(night);
         this.setState(State.Playing);
         this.characters.forEach((character) => {
@@ -38,21 +42,17 @@ export class StateManager {
         startFade(5000);
         this.setGameTime();
         playSound("breathing");
-        if (this.getNight() == 1) {
-            setTimeout(function () { playSound("night1") }, 9000);
-        }
-        if (this.getNight() == 2) {
-            setTimeout(function () { playSound("night2") }, 9000);
-        }
-        if(this.getNight() == 3) {
-            setTimeout(function(){ playSound("night3") }, 9000);
-        }
-        if(this.getNight() == 4) {
-            setTimeout(function(){ playSound("night4") }, 9000);
+        if (night >= 1 && night <= 4) {
+            this.nightCall = setTimeout(() => {
+                if (this.current() === State.Playing) playSound(`night${night}`);
+            }, 9000);
         }
     }
 
     static resetGame() {
+        clearTimeout(this.nightCall);
+        stopCaughtEffect();
+        this.setQuiz(false);
         this.setState(State.MainMenu);
         this.setCurrentView(0);
         startFade(1000);
@@ -69,6 +69,14 @@ export class StateManager {
     static loseNight() {
         this.resetGame();
         playSound("breathing");
+    }
+
+    static catchPlayer(characterIndex: number) {
+        if (this.current() !== State.Playing) return;
+        clearTimeout(this.nightCall);
+        this.setQuiz(false);
+        this.setState(State.Caught);
+        beginCaughtEffect(characterIndex);
     }
 
     static winNight() {
@@ -171,6 +179,7 @@ export class StateManager {
 
     static tickCharacters() {
         this.characters.forEach((character, index) => {
+            if (this.current() !== State.Playing) return;
             if (!character.getValidNight(this.getNight())) {
                 return;
             }
@@ -208,7 +217,9 @@ export class StateManager {
                 if (StateManager.isDoorClosed() && chosenView == 0 && index != 3) {
                     console.log("door closed");
                     playSound("banging");
-                    setTimeout(function () { playSound("breathing"), 4000 });
+                    setTimeout(() => {
+                        if (this.current() === State.Playing) playSound("breathing");
+                    }, 4000);
                     if (Math.random() < 0.35) {
                         character.setLocation(1);
                     } else {
@@ -228,21 +239,9 @@ export class StateManager {
                 }
 
                 if (chosenView == 0 && index != 3) {
-                    this.setCurrentView(0);
-                    if (index == 0) {
-                        playSound("rice");
-                    } else if (index == 1) {
-                        playSound("sherwood");
-                    } else if (index == 2) {
-                        const a = playSound("profit");
-                        a.volume = 1.0;
-                    } else if (index == 3) {
-                        const a = playSound("neeway");
-                    }
-
-                    setTimeout(function () {
-                        StateManager.loseNight();
-                    }, 2500);
+                    character.setLocation(0);
+                    this.catchPlayer(index);
+                    return;
                 }
 
                 if (chosenView == 2 || chosenView == 3) {
